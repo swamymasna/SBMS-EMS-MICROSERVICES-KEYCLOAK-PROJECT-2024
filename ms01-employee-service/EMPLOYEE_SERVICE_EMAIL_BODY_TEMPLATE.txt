@@ -1,0 +1,18 @@
+
+Welcome : {EMP_NAME},
+
+Welcome to KES Application..!
+
+You have Registered Successfully in the KES Application.,
+
+Registration Details : 
+
+Employee-Id : {EMP_ID},
+Employee-Name : {EMP_NAME},
+Employee-Salary : {EMP_SAL},
+Employee-Address : {EMP_ADDR}
+Department-Code : {DEPT_CODE}
+Organization-Code : {ORG_CODE}.
+
+Thanks & Regards.,
+CodeBySwamy!

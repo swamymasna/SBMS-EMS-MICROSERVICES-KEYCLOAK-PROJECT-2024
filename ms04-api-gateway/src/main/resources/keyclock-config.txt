@@ -1,0 +1,105 @@
+SpringBoot-Security Using Keycloack:
+*************************************
+
+https://www.keycloak.org/ 
+	-> Get Started
+	-> Docker
+	-> Copy the Docker Command & Run the Command in cmd-prompt
+
+> docker run -p 9999:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:24.0.4 start-dev
+
+Enter URL to Access Keycloack-UI : http://localhost:9999
+
+	username : admin
+	password : admin
+
+-> Open the Keycloak Admin Console.
+
+-> Click the word 'master' in the top-left corner, then click Create Realm.
+
+-> Create Realm -> Realm Name : sbms-security-realm -> Create -> Click on 'Clients' -> Create Client 
+
+-> *** Client Id : sbms-credentials-id 
+
+-> name & description : sbms-credentials-id
+-> Next -> Client authentication : ON -> Check only 'Service accounts roles'
+-> Next -> Root URL & Home URL : http://localhost:9090 (api-gateway url)
+-> Save
+-> Click on 'Credentials' 
+	Client Secret : A4pZ7JMwq10rBNuN0blAwCADNZf4W7XT
+	
+-> Click on 'Realm Settings'
+		Endpoints ==>> click on {OpenID Endpoint Configuration}
+		
+Issuer : http://localhost:9999/realms/sbms-security-realm
+Token : http://localhost:9999/realms/sbms-security-realm/protocol/openid-connect/token
+
+Add below Code in Api-Gateway Application:
+******************************************
+
+step-1 : Add below security dependencies 
+````````````````````````````````````````
+<!--OAuth2 Resource Server-->	
+<dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+</dependency>
+
+<!--Spring Security-->	
+<dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+
+step-2 : add security property inside properties file
+
+#oauth2-keycloack
+spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:9999/realms/sbms-security-realm
+
+step-3: Implement SecurityConfig class
+
+package com.kes.ip.config;
+
+import org.springframework.context.annotation.*;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+
+	private final String[] freeResourceUrls = { "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/api-docs",
+			"/swagger-resources/**", "/api-docs/**" };
+
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+
+		return httpSecurity.authorizeHttpRequests(
+				authorize -> authorize.requestMatchers(freeResourceUrls).permitAll().anyRequest().authenticated())
+				.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults())).build();
+	}
+}
+
+step-4 : Start the Api-Gateway and all other Microservices
+
+step-5 : Open POSTMAN TOOL and make the Http Request as Follows
+
+GET : http://localhost:9090/api/employees	SEND
+
+	Authorization
+		Auth Type : OAuth2.0
+				Configure New Token
+					Token Name : token
+					Grant type : Client Credentials
+					Access Token URL : http://localhost:9999/realms/sbms-security-realm/protocol/openid-connect/token
+					
+					Client ID : sbms-credentials-id
+					
+					Client Secret : A4pZ7JMwq10rBNuN0blAwCADNZf4W7XT
+					
+					>> Click on 'Get New Access Token'
+					
+					>> Use Token
+					
+					>> SEND
+					
